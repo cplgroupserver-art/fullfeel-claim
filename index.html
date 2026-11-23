@@ -281,7 +281,7 @@ dialog::backdrop{background:color-mix(in srgb,#000 45%,transparent)}
 .doc .dno{text-align:right;border:1.5px solid #2e5fac;border-radius:6px;padding:4px 10px}
 .doc .dno span{font-size:11px;color:#2e5fac}
 .doc .dno b{font-size:16px;display:block;color:#111}
-.doc .dfoot{margin-top:22px;padding-top:6px;border-top:1px solid #cfe3f3;font-size:11px;color:#2e5fac;display:flex;justify-content:space-between}
+.doc .dfoot{margin-top:14px;padding-top:6px;border-top:1px solid #cfe3f3;font-size:11px;color:#2e5fac;display:flex;justify-content:space-between}
 .doc .meta{display:grid;grid-template-columns:1fr 1fr;gap:3px 24px;margin-bottom:12px}
 .doc .meta div{display:flex;gap:6px}
 .doc .meta span{color:#555;min-width:110px}
@@ -291,9 +291,9 @@ dialog::backdrop{background:color-mix(in srgb,#000 45%,transparent)}
 .doc th,.doc td{border:1px solid #999;padding:5px 6px;color:#111;background:#fff;text-align:left}
 .doc th{background:#2e5fac;border-color:#2e5fac;font-weight:600;font-size:11.5px;color:#fff}
 .doc .r{text-align:right} .doc .c{text-align:center}
-.doc .sign{display:grid;grid-template-columns:1fr 1fr 1fr;gap:28px;margin-top:34px}
+.doc .sign{display:grid;grid-template-columns:1fr 1fr 1fr;gap:28px;margin-top:22px;break-inside:avoid}
 .doc .sign div{text-align:center;font-size:12px}
-.doc .sign .ln{border-bottom:1px dotted #111;height:40px;margin-bottom:6px}
+.doc .sign .ln{border-bottom:1px dotted #111;height:32px;margin-bottom:6px}
 .doc .note{margin-top:10px;font-size:12px;color:#333}
 .doc .sec{margin-top:16px;border:1.5px solid #2e5fac;border-radius:6px;padding:10px 12px 4px;break-inside:avoid}
 .doc .sec .st{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
@@ -1421,12 +1421,12 @@ $('#cvPrint').onclick = () => {
   const css = [...document.styleSheets].flatMap(s => { try { return [...s.cssRules]; } catch { return []; } }).map(r => r.cssText).filter(t => t.startsWith('.doc')).join('\n');
   const old = $('#printFrame'); if (old) old.remove();
   const fr = document.createElement('iframe'); fr.id = 'printFrame'; fr.setAttribute('aria-hidden', 'true');
-  fr.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+  fr.style.cssText = 'position:fixed;left:-10000px;top:0;width:190mm;height:277mm;border:0;visibility:hidden';
   document.body.appendChild(fr);
   const w = fr.contentWindow, pageTitle = document.title;
   document.title = c.claim_no;
   w.addEventListener('afterprint', () => { document.title = pageTitle; setTimeout(() => fr.remove(), 500); });
-  w.document.write(`<!doctype html><html lang="th"><head><meta charset="utf-8"><title>${esc(c.claim_no)}</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;600;700&display=swap"><style>body{margin:0;background:#fff}@page{size:A4;margin:10mm}.doc{padding:0!important}${css}</style></head><body>${html}<script>window.onload=()=>(document.fonts?document.fonts.ready:Promise.resolve()).then(()=>setTimeout(()=>{focus();print()},150))<\/script></body></html>`);
+  w.document.write(`<!doctype html><html lang="th"><head><meta charset="utf-8"><title>${esc(c.claim_no)}</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;600;700&display=swap"><style>body{margin:0;background:#fff}@page{size:A4;margin:10mm}.doc{padding:0!important}${css}</style></head><body>${html}<script>window.onload=()=>(document.fonts?document.fonts.ready:Promise.resolve()).then(()=>setTimeout(()=>{const d=document.querySelector('.doc'),H=277*96/25.4-4,h=d.getBoundingClientRect().height;if(h>H){const k=Math.max(.5,H/h),w=document.createElement('div');w.style.cssText='height:'+Math.floor(H)+'px;overflow:hidden';d.before(w);w.append(d);d.style.cssText+=';transform:scale('+k+');transform-origin:0 0;width:'+(100/k)+'%'};focus();print()},150))<\/script></body></html>`);
   w.document.close();
 };
 
