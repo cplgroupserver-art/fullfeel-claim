@@ -295,6 +295,15 @@ dialog::backdrop{background:color-mix(in srgb,#000 45%,transparent)}
 .doc .sign div{text-align:center;font-size:12px}
 .doc .sign .ln{border-bottom:1px dotted #111;height:40px;margin-bottom:6px}
 .doc .note{margin-top:10px;font-size:12px;color:#333}
+.doc .sec{margin-top:16px;border:1.5px solid #2e5fac;border-radius:6px;padding:10px 12px 4px;break-inside:avoid}
+.doc .sec .st{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.doc .sec .st b{font-size:14px;color:#2e5fac;font-weight:600}
+.doc .sec .st span{font-size:11px;color:#b8352a;font-weight:600;border:1px solid #b8352a;border-radius:4px;padding:0 6px}
+.doc .sec h4{margin:4px 0 5px;font-size:12px;color:#2e5fac;font-weight:600}
+.doc .sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:2px 0 8px}
+.doc .sum div{border:1px solid #999;border-radius:6px;padding:6px 10px}
+.doc .sum span{display:block;font-size:11px;color:#555}
+.doc .sum b{font-size:16px;font-weight:600}
 </style>
 </head>
 <body>
@@ -1386,6 +1395,14 @@ $$('[data-close]').forEach(b => b.onclick = () => { const d = b.closest('dialog'
 /* ---- printable work slip (pack + return label reminder) — same document style as Return / Outbound ---- */
 $('#cvPrint').onclick = () => {
   const c = S.claims.get(S.cur); if (!c) return;
+  if (S.internal && S.internal.dirty) return toast('บันทึกผู้รับผิด & ค่าเสียหายก่อนพิมพ์ใบงาน', 4000);
+  const IN = isStaff() && S.internal && (S.internal.faults.length || S.internal.costs.length) ? S.internal : null;
+  const empName = f => f.employee_name || ((S.employees.find(e => e.id === f.employee_id) || {}).name) || 'ไม่ระบุคน';
+  const inCost = IN ? IN.costs.reduce((a, k) => a + num(k.amount), 0) : 0, inEmp = IN ? IN.faults.reduce((a, f) => a + num(f.amount), 0) : 0;
+  const inHtml = !IN ? '' : `<div class="sec"><div class="st"><b>ผู้รับผิด & ค่าเสียหาย</b><span>ภายในคลัง</span></div>
+    ${IN.faults.length ? `<h4>ทีม / พนักงานที่ผิด</h4><table><thead><tr><th style="width:80px">ทีม</th><th style="width:120px">พนักงาน</th><th style="width:140px">ขั้นตอนที่ผิด</th><th>รายละเอียด</th><th class="r" style="width:100px">รับผิดชอบ (บาท)</th></tr></thead><tbody>${IN.faults.map(f => `<tr><td>${esc(f.team || '')}</td><td>${esc(empName(f))}</td><td>${esc(f.step || '')}</td><td>${esc(f.note || '')}</td><td class="r">${money(f.amount)}</td></tr>`).join('')}</tbody></table>` : ''}
+    ${IN.costs.length ? `<h4>ค่าเสียหายของเคส</h4><table><thead><tr><th style="width:160px">ประเภท</th><th>รายละเอียด</th><th class="r" style="width:110px">จำนวนเงิน (บาท)</th></tr></thead><tbody>${IN.costs.map(k => `<tr><td>${esc(k.kind || '')}</td><td>${esc(k.note || '')}</td><td class="r">${money(k.amount)}</td></tr>`).join('')}</tbody></table>` : ''}
+    <div class="sum"><div><span>ค่าเสียหายรวม</span><b>${money(inCost)}</b></div><div><span>พนักงานรับผิดชอบ</span><b>${money(inEmp)}</b></div><div><span>บริษัทรับ</span><b>${money(inCost - inEmp)}</b></div></div></div>`;
   const rows = items => items.map((i, k) => `<tr><td class="c">${k + 1}</td><td>${esc(i.sku || '')}</td><td>${esc(i.name || '')}</td><td class="r">${int(i.qty)}</td><td class="c">☐</td></tr>`).join('');
   const html = `<div class="doc">
     <div class="dh"><img class="dlogo" src="${LOGO()}" alt="FullFeel"><div class="dno"><span>เลขเคลม / Claim No.</span><b>${esc(c.claim_no)}</b></div></div>
@@ -1398,6 +1415,7 @@ $('#cvPrint').onclick = () => {
     ${c.need_resend ? `<table><thead><tr><th class="c" style="width:36px">#</th><th style="width:140px">SKU</th><th>สินค้าที่ต้องแพ็คส่ง</th><th class="r" style="width:70px">จำนวน</th><th class="c" style="width:50px">หยิบ</th></tr></thead><tbody>${rows(c.items || [])}</tbody></table>` : ''}
     ${c.need_return ? `<table><thead><tr><th class="c" style="width:36px">#</th><th style="width:140px">SKU</th><th>สินค้าที่เรียกคืนจากลูกค้า</th><th class="r" style="width:70px">จำนวน</th><th class="c" style="width:50px">รับ</th></tr></thead><tbody>${rows(c.return_items || [])}</tbody></table><div class="note">⚠️ ต้องเรียกคืน: แนบใบปะหน้าเรียกคืนในระบบ เพื่อให้แบรนด์ส่งต่อให้ลูกค้า</div>` : ''}
     ${c.reason ? `<div class="note"><b>รายละเอียด:</b> ${esc(c.reason)}</div>` : ''}
+    ${inHtml}
     <div class="sign"><div><div class="ln"></div>ผู้หยิบ</div><div><div class="ln"></div>ผู้แพ็ค</div><div><div class="ln"></div>ผู้ตรวจ (QC)</div></div>
     <div class="dfoot"><span>FullFeel · Claim System</span><span>${esc(c.claim_no)}</span></div></div>`;
   const css = [...document.styleSheets].flatMap(s => { try { return [...s.cssRules]; } catch { return []; } }).map(r => r.cssText).filter(t => t.startsWith('.doc')).join('\n');
