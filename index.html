@@ -551,7 +551,7 @@ dialog::backdrop{background:color-mix(in srgb,#000 45%,transparent)}
 <dialog id="dlgCase" style="width:min(1000px,calc(100vw - 24px))"><div class="dlg">
   <div class="dlg-h"><div class="row" style="gap:8px"><h3 id="cvNo"></h3><span id="cvPills" class="row" style="gap:6px"></span></div><button class="x" type="button" data-close aria-label="ปิด">×</button></div>
   <div class="dlg-b" id="cvBody"></div>
-  <div class="dlg-f"><span class="left row" style="gap:8px" id="cvLeft"></span><button class="btn" type="button" id="cvPrint" data-staff>🖨 ใบงานเคลม</button><button class="btn primary" type="button" data-close>ปิด</button></div>
+  <div class="dlg-f"><span class="left row" style="gap:8px" id="cvLeft"></span><button class="btn" type="button" id="cvPrint" data-staff>🖨 Print</button><button class="btn primary" type="button" data-close>ปิด</button></div>
 </div></dialog>
 
 <!-- ============ CUSTOMER ============ -->
@@ -1419,8 +1419,14 @@ $('#cvPrint').onclick = () => {
     <div class="sign"><div><div class="ln"></div>ผู้หยิบ</div><div><div class="ln"></div>ผู้แพ็ค</div><div><div class="ln"></div>ผู้ตรวจ (QC)</div></div>
     <div class="dfoot"><span>FullFeel · Claim System</span><span>${esc(c.claim_no)}</span></div></div>`;
   const css = [...document.styleSheets].flatMap(s => { try { return [...s.cssRules]; } catch { return []; } }).map(r => r.cssText).filter(t => t.startsWith('.doc')).join('\n');
-  const w = window.open('', '_blank'); if (!w) return toast('เบราว์เซอร์บล็อกหน้าต่างพิมพ์ — กรุณาอนุญาต pop-up');
-  w.document.write(`<!doctype html><html lang="th"><head><meta charset="utf-8"><title>${esc(c.claim_no)}</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;600;700&display=swap"><style>body{margin:0;background:#fff}@page{size:A4;margin:10mm}.doc{padding:0!important}${css}</style></head><body>${html}<script>window.onload=()=>setTimeout(()=>print(),400)<\/script></body></html>`);
+  const old = $('#printFrame'); if (old) old.remove();
+  const fr = document.createElement('iframe'); fr.id = 'printFrame'; fr.setAttribute('aria-hidden', 'true');
+  fr.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+  document.body.appendChild(fr);
+  const w = fr.contentWindow, pageTitle = document.title;
+  document.title = c.claim_no;
+  w.addEventListener('afterprint', () => { document.title = pageTitle; setTimeout(() => fr.remove(), 500); });
+  w.document.write(`<!doctype html><html lang="th"><head><meta charset="utf-8"><title>${esc(c.claim_no)}</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;600;700&display=swap"><style>body{margin:0;background:#fff}@page{size:A4;margin:10mm}.doc{padding:0!important}${css}</style></head><body>${html}<script>window.onload=()=>(document.fonts?document.fonts.ready:Promise.resolve()).then(()=>setTimeout(()=>{focus();print()},150))<\/script></body></html>`);
   w.document.close();
 };
 
